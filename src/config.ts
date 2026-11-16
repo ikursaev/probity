@@ -6,6 +6,8 @@ import { createJiti } from 'jiti'
 
 import type { Agent } from './types.js'
 import type { Rule } from './rules/contract.js'
+import type { ClaudeCodeOptions } from './vendors/claude-code/agent.js'
+import type { CodexOptions } from './vendors/codex/agent.js'
 
 /**
  * A scoped rule block. Groups rules under a shared `files` filter so
@@ -41,10 +43,20 @@ export type RuleEntry = Rule | RuleBlock
  *   piggybacks on the user's logged-in session. The field is named
  *   `ai` (not `agent`) to disambiguate from `--agent <vendor>`, which
  *   selects the host coding agent.
+ * - `validators` — optional settings for the vendors' own validators,
+ *   keyed by `--agent` vendor: which CLI each runs on (the one the SDK
+ *   bundles, or the one installed on the machine) and, for Claude
+ *   Code, the model and prompt caching. Only the entry of the vendor
+ *   in use applies, so one config serves every agent that works in
+ *   the project. Ignored when `ai` is set.
  */
 export type Config = {
   rules: readonly RuleEntry[]
   ai?: Agent
+  validators?: {
+    'claude-code'?: ClaudeCodeOptions
+    codex?: CodexOptions
+  }
 }
 
 /**

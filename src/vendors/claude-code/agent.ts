@@ -1,6 +1,7 @@
 import type { Options as ClaudeQueryOptions } from '@anthropic-ai/claude-agent-sdk'
 
 import type { Agent } from '../../types.js'
+import { type FindCli, resolveExecutable } from '../find-system-cli.js'
 import { toVerdict } from '../to-verdict.js'
 
 type ClaudeMessage = { type: string; [k: string]: unknown }
@@ -10,12 +11,43 @@ export type QueryFn = (args: {
   options?: ClaudeQueryOptions
 }) => AsyncIterable<ClaudeMessage>
 
-export function claudeCode(deps: { queryFn?: QueryFn } = {}): Agent {
+/**
+ * How the Claude Code validator runs. Every field is optional; with
+ * none set the validator runs on the CLI the Agent SDK bundles, with
+ * that CLI's default model.
+ *
+ * - `executable` — the `claude` CLI to run instead of the bundled
+ *   one: a path, or `'system'` for the one installed on PATH (a copy
+ *   in the project's `node_modules` does not count). A missing system
+ *   CLI blocks the action rather than falling back to the bundled one.
+ * - `model` — the model to ask, as the CLI's `--model` takes it (an
+ *   alias such as `'opus'`, or a full model ID).
+ * - `promptCaching` — `false` runs the CLI with prompt caching off.
+ *   The validator asks one question per run and its prompt differs
+ *   every time, so a cache entry it writes is never read back, while
+ *   writing it is billed above the plain input rate.
+ */
+export type ClaudeCodeOptions = {
+  executable?: string
+  model?: string
+  promptCaching?: boolean
+}
+
+type ClaudeCodeDeps = {
+  queryFn?: QueryFn
+  findCli?: FindCli
+  env?: Record<string, string | undefined>
+}
+
+export function claudeCode(
+  deps: ClaudeCodeDeps & ClaudeCodeOptions = {},
+): Agent {
   return {
     reason: (prompt) =>
       toVerdict(async () => {
         const queryFn = deps.queryFn ?? (await loadDefaultQueryFn())
-        return getResult(queryFn, prompt)
+        const executable = resolveExecutable('claude', deps)
+        return getResult(queryFn, prompt, deps, executable)
       }),
   }
 }
@@ -28,6 +60,8 @@ async function loadDefaultQueryFn(): Promise<QueryFn> {
 async function getResult(
   queryFn: QueryFn,
   prompt: string,
+  options: ClaudeCodeDeps & ClaudeCodeOptions,
+  executable: string | undefined,
 ): Promise<{ text: string; meta?: ClaudeCodeMeta }> {
   for await (const message of queryFn({
     prompt,
@@ -39,6 +73,18 @@ async function getResult(
       settings: { autoMemoryEnabled: false },
       settingSources: [],
       persistSession: false,
+      ...(executable !== undefined && {
+        pathToClaudeCodeExecutable: executable,
+      }),
+      ...(options.model !== undefined && { model: options.model }),
+      // The SDK replaces the CLI's environment with `env`, so the
+      // caller's goes along: it carries the login the CLI runs on.
+      ...(options.promptCaching === false && {
+        env: {
+          ...(options.env ?? process.env),
+          DISABLE_PROMPT_CACHING: '1',
+        },
+      }),
     },
   })) {
     if (message.type === 'result' && message.subtype === 'success') {

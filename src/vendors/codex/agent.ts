@@ -1,6 +1,7 @@
 import type { ThreadOptions } from '@openai/codex-sdk'
 
 import type { Agent } from '../../types.js'
+import { type FindCli, resolveExecutable } from '../find-system-cli.js'
 import { toVerdict } from '../to-verdict.js'
 
 type CodexLike = {
@@ -15,11 +16,30 @@ type CodexLike = {
   }
 }
 
-export function codex(deps: { codex?: CodexLike } = {}): Agent {
+/**
+ * How the Codex validator runs. With nothing set it runs on the CLI
+ * the Codex SDK bundles.
+ *
+ * - `executable` — the `codex` CLI to run instead of the bundled one:
+ *   a path, or `'system'` for the one installed on PATH (a copy in the
+ *   project's `node_modules` does not count). A missing system CLI
+ *   blocks the action rather than falling back to the bundled one.
+ */
+export type CodexOptions = {
+  executable?: string
+}
+
+type CodexDeps = {
+  codex?: CodexLike
+  findCli?: FindCli
+  createCodex?: (options: { codexPathOverride?: string }) => CodexLike
+}
+
+export function codex(deps: CodexDeps & CodexOptions = {}): Agent {
   return {
     reason: (prompt) =>
       toVerdict(async () => {
-        const instance = deps.codex ?? (await loadDefaultCodex())
+        const instance = deps.codex ?? (await createInstance(deps))
         const thread = instance.startThread({
           skipGitRepoCheck: true,
           sandboxMode: 'read-only',
@@ -36,9 +56,15 @@ export function codex(deps: { codex?: CodexLike } = {}): Agent {
   }
 }
 
-async function loadDefaultCodex(): Promise<CodexLike> {
+async function createInstance(
+  deps: CodexDeps & CodexOptions,
+): Promise<CodexLike> {
+  const executable = resolveExecutable('codex', deps)
+  const options =
+    executable === undefined ? {} : { codexPathOverride: executable }
+  if (deps.createCodex) return deps.createCodex(options)
   const mod = await import('@openai/codex-sdk')
-  return new mod.Codex()
+  return new mod.Codex(options)
 }
 
 type CodexMeta = {

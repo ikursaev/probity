@@ -33,6 +33,30 @@ Probity's default AI validator pairs with the agent selected by `--agent` (e.g. 
 
 The host coding agent itself is selected by the `--agent` CLI flag, not by the config — that keeps the same config portable across vendors.
 
+## Validator settings
+
+`validators` adjusts the default validators without replacing them. It is keyed by `--agent` vendor, and only the entry of the vendor in use applies, so one config serves every agent that works in the project. It is ignored when `ai` is set.
+
+```ts
+export default defineConfig({
+  validators: {
+    'claude-code': {
+      executable: 'system',
+      model: 'opus',
+      promptCaching: false,
+    },
+    codex: { executable: 'system' },
+  },
+  rules: [/* ... */],
+})
+```
+
+- `executable` (`claude-code`, `codex`): which CLI the validator runs on. Left out, it is the copy the vendor's SDK bundles, pinned to the SDK version Probity depends on. `'system'` is the CLI installed on the machine: the first `claude` or `codex` on `PATH` that is not inside the project's `node_modules`. Any other value is a path to the CLI. With `'system'` and no installed CLI, the action is blocked with a message that says so; Probity does not fall back to the bundled copy.
+- `model` (`claude-code`): the model to ask, as `claude --model` takes it: an alias such as `'opus'` or a full model ID. Left out, it is the CLI's default.
+- `promptCaching` (`claude-code`): `false` runs the CLI with prompt caching off (`DISABLE_PROMPT_CACHING=1` in its environment). A validator run is one question whose prompt differs every time, so a cache entry it writes is never read back, while writing it is billed above the plain input rate.
+
+Use the system CLI when the bundled one lags behind what you have installed: a newer CLI knows newer models, and a model the bundled CLI does not know can reject the validator's request, which blocks every checked action.
+
 ## Overriding the file location
 
 Pass `--config` to point probity at a specific file instead of using walk-up resolution:

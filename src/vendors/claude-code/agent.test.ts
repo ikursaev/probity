@@ -156,6 +156,75 @@ describe('claudeCode', () => {
     expect(capture.last?.options?.env).toBeUndefined()
   })
 
+  it('runs the validator on the CLI at the given executable path', async () => {
+    const capture = captureQuery()
+    const client = claudeCode({
+      queryFn: capture.fn,
+      executable: '/opt/claude/bin/claude',
+    })
+
+    await client.reason('prompt')
+
+    expect(capture.last?.options?.pathToClaudeCodeExecutable).toBe(
+      '/opt/claude/bin/claude',
+    )
+  })
+
+  it("resolves the 'system' executable to the installed claude CLI", async () => {
+    const capture = captureQuery()
+    const client = claudeCode({
+      queryFn: capture.fn,
+      executable: 'system',
+      findCli: (name) => `/usr/local/bin/${name}`,
+    })
+
+    await client.reason('prompt')
+
+    expect(capture.last?.options?.pathToClaudeCodeExecutable).toBe(
+      '/usr/local/bin/claude',
+    )
+  })
+
+  it('blocks the action when no system claude CLI is installed', async () => {
+    const client = claudeCode({
+      queryFn: fakeQuery({ result: '{"kind":"pass","reason":"ok"}' }),
+      executable: 'system',
+      findCli: () => {
+        throw new Error('no system `claude` CLI on PATH')
+      },
+    })
+
+    const verdict = await client.reason('prompt')
+
+    expect(verdict.kind).toBe('violation')
+    expect(verdict.reason).toMatch(/no system `claude` CLI on PATH/)
+  })
+
+  it('asks for the configured model', async () => {
+    const capture = captureQuery()
+    const client = claudeCode({ queryFn: capture.fn, model: 'opus' })
+
+    await client.reason('prompt')
+
+    expect(capture.last?.options?.model).toBe('opus')
+  })
+
+  it('turns prompt caching off in the CLI environment, keeping the rest of it', async () => {
+    const capture = captureQuery()
+    const client = claudeCode({
+      queryFn: capture.fn,
+      promptCaching: false,
+      env: { HOME: '/home/someone' },
+    })
+
+    await client.reason('prompt')
+
+    expect(capture.last?.options?.env).toEqual({
+      HOME: '/home/someone',
+      DISABLE_PROMPT_CACHING: '1',
+    })
+  })
+
   it('records one usage row per model from the SDK modelUsage ledger', async () => {
     // real results carry aggregate `usage` alongside `modelUsage`
     const client = claudeCode({

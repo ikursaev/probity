@@ -110,6 +110,22 @@ describe('codex', () => {
 
     expect(verdict.meta).toEqual({ inputTokens: 200, outputTokens: 40 })
   })
+
+  it("starts the installed codex CLI for the 'system' executable", async () => {
+    const created: unknown[] = []
+    const client = codex({
+      executable: 'system',
+      findCli: (name) => `/usr/local/bin/${name}`,
+      createCodex: (options) => {
+        created.push(options)
+        return fakeCodex({})
+      },
+    })
+
+    await client.reason('prompt')
+
+    expect(created).toEqual([{ codexPathOverride: '/usr/local/bin/codex' }])
+  })
 })
 
 function captureCodex() {

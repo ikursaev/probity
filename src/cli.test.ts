@@ -2,8 +2,15 @@ import { readFileSync } from 'node:fs'
 
 import { describe, it, expect } from 'vitest'
 
-import { failClosedResponse, run, type RunResult, type Vendor } from './cli.js'
+import {
+  failClosedResponse,
+  run,
+  selectValidator,
+  type RunResult,
+  type Vendor,
+} from './cli.js'
 import type { Config } from './config.js'
+import { vendors } from './registry.js'
 import type { Agent, SessionEvent } from './types.js'
 import { enforceTdd } from './rules/enforce-tdd.js'
 import { enforceFilenameCasing } from './rules/enforce-filename-casing.js'
@@ -313,6 +320,31 @@ describe('cli', () => {
     expect(parsed.hookSpecificOutput.permissionDecisionReason).toMatch(
       /invalid hook payload/i,
     )
+  })
+
+  it("builds the vendor's validator from that vendor's `validators` entry", () => {
+    const received: unknown[] = []
+    const config: Config = {
+      rules: [],
+      validators: {
+        'claude-code': { model: 'opus' },
+        codex: { executable: 'system' },
+      },
+    }
+
+    const agent = selectValidator(config, 'codex', {
+      ...vendors,
+      codex: {
+        ...vendors.codex,
+        agent: (options) => {
+          received.push(options)
+          return stubAgent
+        },
+      },
+    })
+
+    expect(received).toEqual([{ executable: 'system' }])
+    expect(agent).toBe(stubAgent)
   })
 })
 

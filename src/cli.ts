@@ -41,8 +41,27 @@ export async function run(
 ): Promise<RunResult> {
   const entry = vendors[options.vendor]
   const config = await (options.loadConfig ?? defaultConfigLoader)()
-  const agent = config.ai ?? entry.agent()
+  const agent = selectValidator(config, options.vendor)
   return dispatch(entry, rawPayload, config.rules, agent)
+}
+
+/**
+ * The AI validator for this run: the config's `ai` override, or the
+ * selected vendor's own validator, built with that vendor's entry of
+ * `validators` when the config has one.
+ */
+export function selectValidator(
+  config: Config,
+  vendor: Vendor,
+  registry: typeof vendors = vendors,
+): Agent {
+  if (config.ai) return config.ai
+  const options = config.validators ?? {}
+  if (vendor === 'claude-code') {
+    return registry['claude-code'].agent(options['claude-code'])
+  }
+  if (vendor === 'codex') return registry.codex.agent(options.codex)
+  return registry[vendor].agent()
 }
 
 async function dispatch(
