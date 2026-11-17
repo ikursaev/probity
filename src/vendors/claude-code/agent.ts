@@ -76,7 +76,13 @@ async function getResult(
       thinking: { type: 'disabled' },
       permissionMode: 'dontAsk',
       tools: [],
-      settings: { autoMemoryEnabled: false },
+      // Non-essential traffic includes a side Haiku call about as large
+      // as the prompt. Set through settings so that `env` stays unset
+      // unless prompt caching is off.
+      settings: {
+        autoMemoryEnabled: false,
+        env: { CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1' },
+      },
       settingSources: [],
       // The CLI otherwise loads the logged-in account's claude.ai
       // connectors even with `tools: []`; measured at about 17k input

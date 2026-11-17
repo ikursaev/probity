@@ -66,8 +66,19 @@ describe('claudeCode', () => {
 
     await client.reason('prompt')
 
-    expect(capture.last?.options?.settings).toEqual({
+    expect(capture.last?.options?.settings).toMatchObject({
       autoMemoryEnabled: false,
+    })
+  })
+
+  it('turns off the CLI side calls that a verdict does not use', async () => {
+    const capture = captureQuery()
+    const client = claudeCode({ queryFn: capture.fn })
+
+    await client.reason('prompt')
+
+    expect(capture.last?.options?.settings).toMatchObject({
+      env: { CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1' },
     })
   })
 
