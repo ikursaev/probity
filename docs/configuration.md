@@ -43,6 +43,7 @@ export default defineConfig({
     'claude-code': {
       executable: 'system',
       model: 'opus',
+      effort: 'high',
       promptCaching: false,
     },
     codex: {
@@ -57,6 +58,7 @@ export default defineConfig({
 
 - `executable` (`claude-code`, `codex`): which CLI the validator runs on. Left out, it is the copy the vendor's SDK bundles, pinned to the SDK version Probity depends on. `'system'` is the CLI installed on the machine: the first `claude` or `codex` on `PATH` that is not inside the project's `node_modules`. Any other value is a path to the CLI. With `'system'` and no installed CLI, the action is blocked with a message that says so; Probity does not fall back to the bundled copy.
 - `model` (`claude-code`, `codex`): the model to ask, as `claude --model` or `codex --model` takes it: for Claude Code an alias such as `'opus'` or a full model ID. Left out, it is the CLI's default.
+- `effort` (`claude-code`): the effort level, as `claude --effort` takes it (`'low'` to `'max'`). Left out, it is the CLI's default for the model.
 - `reasoningEffort` (`codex`): the reasoning effort, as Codex's `model_reasoning_effort` setting takes it (`'high'`, `'xhigh'`, ...). Left out, it is the CLI's default.
 - `promptCaching` (`claude-code`): `false` runs the CLI with prompt caching off (`DISABLE_PROMPT_CACHING=1` in its environment). A validator run is one question whose prompt differs every time, so a cache entry it writes is never read back, while writing it is billed above the plain input rate.
 

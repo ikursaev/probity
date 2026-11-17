@@ -209,6 +209,15 @@ describe('claudeCode', () => {
     expect(capture.last?.options?.model).toBe('opus')
   })
 
+  it('asks at the configured effort', async () => {
+    const capture = captureQuery()
+    const client = claudeCode({ queryFn: capture.fn, effort: 'xhigh' })
+
+    await client.reason('prompt')
+
+    expect(capture.last?.options?.effort).toBe('xhigh')
+  })
+
   it('turns prompt caching off in the CLI environment, keeping the rest of it', async () => {
     const capture = captureQuery()
     const client = claudeCode({

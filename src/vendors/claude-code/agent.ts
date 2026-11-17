@@ -1,4 +1,7 @@
-import type { Options as ClaudeQueryOptions } from '@anthropic-ai/claude-agent-sdk'
+import type {
+  EffortLevel,
+  Options as ClaudeQueryOptions,
+} from '@anthropic-ai/claude-agent-sdk'
 
 import type { Agent } from '../../types.js'
 import { type FindCli, resolveExecutable } from '../find-system-cli.js'
@@ -22,6 +25,8 @@ export type QueryFn = (args: {
  *   CLI blocks the action rather than falling back to the bundled one.
  * - `model` — the model to ask, as the CLI's `--model` takes it (an
  *   alias such as `'opus'`, or a full model ID).
+ * - `effort` — the effort level, as the CLI's `--effort` takes it.
+ *   Left out, it is the CLI's default for the model.
  * - `promptCaching` — `false` runs the CLI with prompt caching off.
  *   The validator asks one question per run and its prompt differs
  *   every time, so a cache entry it writes is never read back, while
@@ -30,6 +35,7 @@ export type QueryFn = (args: {
 export type ClaudeCodeOptions = {
   executable?: string
   model?: string
+  effort?: EffortLevel
   promptCaching?: boolean
 }
 
@@ -77,6 +83,7 @@ async function getResult(
         pathToClaudeCodeExecutable: executable,
       }),
       ...(options.model !== undefined && { model: options.model }),
+      ...(options.effort !== undefined && { effort: options.effort }),
       // The SDK replaces the CLI's environment with `env`, so the
       // caller's goes along: it carries the login the CLI runs on.
       ...(options.promptCaching === false && {
