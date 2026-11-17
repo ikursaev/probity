@@ -145,13 +145,13 @@ describe('codex', () => {
     expect(capture.lastThreadOptions?.modelReasoningEffort).toBe('xhigh')
   })
 
-  it('starts the thread at high reasoning effort when none is configured', async () => {
+  it('starts the thread at low reasoning effort when none is configured', async () => {
     const capture = captureCodex()
     const client = codex({ codex: capture.codex })
 
     await client.reason('prompt')
 
-    expect(capture.lastThreadOptions?.modelReasoningEffort).toBe('high')
+    expect(capture.lastThreadOptions?.modelReasoningEffort).toBe('low')
   })
 })
 

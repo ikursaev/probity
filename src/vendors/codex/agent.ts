@@ -28,8 +28,11 @@ type CodexLike = {
  *   it is the CLI's configured default.
  * - `reasoningEffort` — the reasoning effort, as the CLI's
  *   `model_reasoning_effort` setting takes it. Left out, it is
- *   `'high'`, whatever the user's Codex config sets for their own
- *   sessions.
+ *   `'low'`, whatever the user's Codex config sets for their own
+ *   sessions: the validator answers one short question per checked
+ *   action, and the Claude Code validator runs with thinking off for
+ *   the same latency reason. Not `'minimal'`: newer models such as
+ *   gpt-6.1-sol reject it, and a rejected request blocks the action.
  */
 export type CodexOptions = {
   executable?: string
@@ -55,7 +58,7 @@ export function codex(deps: CodexDeps & CodexOptions = {}): Agent {
           networkAccessEnabled: false,
           webSearchEnabled: false,
           ...(deps.model === undefined ? {} : { model: deps.model }),
-          modelReasoningEffort: deps.reasoningEffort ?? 'high',
+          modelReasoningEffort: deps.reasoningEffort ?? 'low',
         })
         const turn = await thread.run(prompt)
         const meta = buildMeta(turn.usage)
