@@ -1,4 +1,4 @@
-import type { ThreadOptions } from '@openai/codex-sdk'
+import type { ModelReasoningEffort, ThreadOptions } from '@openai/codex-sdk'
 
 import type { Agent } from '../../types.js'
 import { type FindCli, resolveExecutable } from '../find-system-cli.js'
@@ -24,9 +24,16 @@ type CodexLike = {
  *   a path, or `'system'` for the one installed on PATH (a copy in the
  *   project's `node_modules` does not count). A missing system CLI
  *   blocks the action rather than falling back to the bundled one.
+ * - `model` — the model to ask, as `codex --model` takes it. Left out,
+ *   it is the CLI's configured default.
+ * - `reasoningEffort` — the reasoning effort, as the CLI's
+ *   `model_reasoning_effort` setting takes it. Left out, it is the
+ *   CLI's configured default.
  */
 export type CodexOptions = {
   executable?: string
+  model?: string
+  reasoningEffort?: ModelReasoningEffort
 }
 
 type CodexDeps = {
@@ -46,6 +53,10 @@ export function codex(deps: CodexDeps & CodexOptions = {}): Agent {
           approvalPolicy: 'never',
           networkAccessEnabled: false,
           webSearchEnabled: false,
+          ...(deps.model === undefined ? {} : { model: deps.model }),
+          ...(deps.reasoningEffort === undefined
+            ? {}
+            : { modelReasoningEffort: deps.reasoningEffort }),
         })
         const turn = await thread.run(prompt)
         const meta = buildMeta(turn.usage)

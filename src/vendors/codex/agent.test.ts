@@ -126,6 +126,24 @@ describe('codex', () => {
 
     expect(created).toEqual([{ codexPathOverride: '/usr/local/bin/codex' }])
   })
+
+  it('starts the thread on the configured model', async () => {
+    const capture = captureCodex()
+    const client = codex({ codex: capture.codex, model: 'gpt-6.1-sol' })
+
+    await client.reason('prompt')
+
+    expect(capture.lastThreadOptions?.model).toBe('gpt-6.1-sol')
+  })
+
+  it('starts the thread at the configured reasoning effort', async () => {
+    const capture = captureCodex()
+    const client = codex({ codex: capture.codex, reasoningEffort: 'xhigh' })
+
+    await client.reason('prompt')
+
+    expect(capture.lastThreadOptions?.modelReasoningEffort).toBe('xhigh')
+  })
 })
 
 function captureCodex() {

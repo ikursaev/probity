@@ -45,8 +45,9 @@ export type RuleEntry = Rule | RuleBlock
  *   selects the host coding agent.
  * - `validators` — optional settings for the vendors' own validators,
  *   keyed by `--agent` vendor: which CLI each runs on (the one the SDK
- *   bundles, or the one installed on the machine) and, for Claude
- *   Code, the model and prompt caching. Only the entry of the vendor
+ *   bundles, or the one installed on the machine), the model, and for
+ *   Claude Code prompt caching and for Codex the reasoning effort.
+ *   Only the entry of the vendor
  *   in use applies, so one config serves every agent that works in
  *   the project. Ignored when `ai` is set.
  */
