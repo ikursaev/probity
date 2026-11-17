@@ -78,6 +78,11 @@ async function getResult(
       tools: [],
       settings: { autoMemoryEnabled: false },
       settingSources: [],
+      // The CLI otherwise loads the logged-in account's claude.ai
+      // connectors even with `tools: []`; measured at about 17k input
+      // tokens per run, none of which a verdict uses.
+      strictMcpConfig: true,
+      mcpServers: {},
       persistSession: false,
       ...(executable !== undefined && {
         pathToClaudeCodeExecutable: executable,

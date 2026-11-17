@@ -80,6 +80,16 @@ describe('claudeCode', () => {
     expect(capture.last?.options?.settingSources).toEqual([])
   })
 
+  it('loads no MCP servers, so no account connector reaches the prompt', async () => {
+    const capture = captureQuery()
+    const client = claudeCode({ queryFn: capture.fn })
+
+    await client.reason('prompt')
+
+    expect(capture.last?.options?.strictMcpConfig).toBe(true)
+    expect(capture.last?.options?.mcpServers).toEqual({})
+  })
+
   it('does not persist sessions to disk so validator runs do not pollute project history', async () => {
     const capture = captureQuery()
     const client = claudeCode({ queryFn: capture.fn })
