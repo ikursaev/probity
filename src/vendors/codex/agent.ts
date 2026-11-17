@@ -27,8 +27,9 @@ type CodexLike = {
  * - `model` — the model to ask, as `codex --model` takes it. Left out,
  *   it is the CLI's configured default.
  * - `reasoningEffort` — the reasoning effort, as the CLI's
- *   `model_reasoning_effort` setting takes it. Left out, it is the
- *   CLI's configured default.
+ *   `model_reasoning_effort` setting takes it. Left out, it is
+ *   `'high'`, whatever the user's Codex config sets for their own
+ *   sessions.
  */
 export type CodexOptions = {
   executable?: string
@@ -54,9 +55,7 @@ export function codex(deps: CodexDeps & CodexOptions = {}): Agent {
           networkAccessEnabled: false,
           webSearchEnabled: false,
           ...(deps.model === undefined ? {} : { model: deps.model }),
-          ...(deps.reasoningEffort === undefined
-            ? {}
-            : { modelReasoningEffort: deps.reasoningEffort }),
+          modelReasoningEffort: deps.reasoningEffort ?? 'high',
         })
         const turn = await thread.run(prompt)
         const meta = buildMeta(turn.usage)
